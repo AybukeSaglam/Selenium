@@ -1,0 +1,221 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
+from time import sleep
+
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as ec 
+from selenium.webdriver.common.action_chains import ActionChains 
+
+import pytest
+
+class Test_Sauce_Login:
+
+    def setup_method(self):
+        self.driver = webdriver.Chrome()
+        self.driver.get("https://saucedemo.com/")
+        self.driver.maximize_window()
+    
+    def teardown_method(self):
+        self.driver.quit()
+    
+    @pytest.fixture
+    def user_name_input(self):
+        return ""
+    @pytest.fixture
+    def password_input(self):
+        return ""
+
+    
+ 
+    #@pytest.fixture()
+    @pytest.mark.usefixtures(user_name_input,password_input)
+    def login_test(self,user_name_input,password_input):
+       
+        usernameInput = WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.ID,"user-name")))
+        usernameInput.send_keys(user_name_input)
+        
+        passwordInput = WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.ID,"password")))
+        passwordInput.send_keys(password_input)
+
+        loginButton = WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.ID,"login-button")))
+        loginButton.click()
+        
+
+    
+    #@pytest.mark.skip
+    def test_empty_username_pass_login(self):
+
+       self.login_test(self.user_name_input,self.password_input)
+        
+        errorMessage = WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.XPATH,"//*[@id='login_button_container']/div/form/div[3]/h3")))
+        assert errorMessage.text == "Epic sadface: Username is required"
+
+    
+ 
+    #@pytest.mark.skip 
+    @pytest.mark.parametrize("username,password",[("1",""),("problem_user",""),("emptyPass","")])
+    def test_empty_pass_login(self,username,password):
+
+        usernameInput = WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.ID,"user-name")))
+        usernameInput.send_keys(username)
+        
+        passwordInput = WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.ID,"password")))
+        passwordInput.send_keys(password)
+
+        loginButton = WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.ID,"login-button")))
+        loginButton.click()
+
+        errorMessage = WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.XPATH,"//*[@id='login_button_container']/div/form/div[3]/h3")))
+        assert errorMessage.text == "Epic sadface: Password is required"
+    
+
+  
+    #@pytest.mark.skip
+    def test_locked_login(self):
+
+        user_name_input = "locked_out_user"
+        password_input ="secret_sauce"
+        self.login_test(user_name_input,password_input)
+
+        errorMessage = WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.XPATH,"//*[@id='login_button_container']/div/form/div[3]/h3")))
+        assert errorMessage.text == "Epic sadface: Sorry, this user has been locked out."
+    
+
+    #@pytest.mark.skip
+    @pytest.mark.parametrize("username,password",[("1","secret_sauce"),("problem_user","empty"),("emptyPass","notRegistered")])
+    def test_not_registered_user_login(self, username, password):
+
+        usernameInput = WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.ID,"user-name")))
+        usernameInput.send_keys(username)
+        
+        passwordInput = WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.ID,"password")))
+        passwordInput.send_keys(password)
+
+        loginButton = WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.ID,"login-button")))
+        loginButton.click()
+
+        errorMessage = WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.XPATH,"//*[@id='login_button_container']/div/form/div[3]/h3")))
+        assert errorMessage.text == "Epic sadface: Username and password do not match any user in this service"
+    
+ 
+    #@pytest.mark.skip
+    def test_standard_user_login(self):
+
+        usernameInput = WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.ID,"user-name")))
+        usernameInput.send_keys("standard_user")
+        
+        passwordInput = WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.ID,"password")))
+        passwordInput.send_keys("secret_sauce")
+
+        loginButton = WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.ID,"login-button")))
+        loginButton.click()
+
+        WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.ID,"inventory_container")))
+
+        current_page_test_result= self.driver.current_url 
+        assert current_page_test_result == "https://www.saucedemo.com/inventory.html", "not expected page url"
+    
+        listOfCourses = self.driver.find_elements(By.CLASS_NAME, "inventory_item")
+        #listOfCourses = WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.CLASS_NAME, "inventory_item")))
+        assert len(listOfCourses) == 6,  "number of courses is different from 6"
+        
+
+class Test_Sauce_ProductList_Page:
+
+    def setup_method(self):
+        self.driver = webdriver.Chrome()
+        self.driver.get("https://saucedemo.com/")
+        self.driver.maximize_window()
+        
+  
+        usernameInput = WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.ID,"user-name")))
+        usernameInput.send_keys("standard_user")
+        
+        passwordInput = WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.ID,"password")))
+        passwordInput.send_keys("secret_sauce")
+
+        loginButton = WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.ID,"login-button")))
+        loginButton.click()
+    
+    def teardown_method(self):
+        self.driver.quit()
+    
+   
+    
+    #@pytest.mark.skip
+    def test_addToCart(self):
+
+        
+        addToCartButtonList = WebDriverWait(self.driver,5).until(ec.presence_of_all_elements_located((By.CLASS_NAME, "btn")))
+        actionChains = ActionChains(self.driver)
+        addToCart_itemNameLists =[]
+
+        
+        itemNameList = WebDriverWait(self.driver,5).until(ec.presence_of_all_elements_located((By.CLASS_NAME, "inventory_item_name")))
+        i=0
+
+        for addToCart in addToCartButtonList:
+            
+          
+            actionChains.move_to_element(addToCart) # sayfayı elementin olduğu yere taşı
+            actionChains.click()
+            actionChains.perform()
+            
+           
+            addToCart_itemNameLists.append(itemNameList[i].text)
+
+           
+            remove_btn_name ="remove-"+str.lower(itemNameList[i].text).replace(" ","-")
+            
+            removeButton =  WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.ID, remove_btn_name)))
+            assert removeButton.text == "Remove" ,{"text of Button ",remove_btn_name," not equal 'Remove'"}
+            i+=1
+           
+
+       
+        shopping_cart_link =  WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.CLASS_NAME, "shopping_cart_link")))
+        shopping_cart_link.click()
+       
+       
+        shopping_cart_page_title =  WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.CLASS_NAME, "title")))
+        assert shopping_cart_page_title.text == "Your Cart", "title of the page is not equal 'Your Cart'"
+        
+        
+        shoppingCart_itemNameList = WebDriverWait(self.driver,5).until(ec.presence_of_all_elements_located((By.CLASS_NAME, "inventory_item_name")))
+        i=0
+        for shoppingCart_itemName in shoppingCart_itemNameList:
+            assert shoppingCart_itemName.text == addToCart_itemNameLists[i] ,{"item ",shoppingCart_itemName.text," could not find in the shopping cart"}
+            i+=1
+    
+  
+    #@pytest.mark.skip
+    def test_goToproductDetailsByItemName(self):
+        
+       
+        itemName = WebDriverWait(self.driver,5).until(ec.presence_of_element_located((By.CLASS_NAME, "inventory_item_name")))
+        itemNameText = itemName.text
+        
+      
+        itemLink= WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.ID, "item_4_title_link")))
+        itemLink.click()
+        
+       
+        itemDetailsName = WebDriverWait(self.driver,5).until(ec.presence_of_element_located((By.CLASS_NAME, "inventory_details_name")))
+        assert itemDetailsName.text == itemNameText, "Item Names are not equal"
+    
+    
+    #@pytest.mark.skip
+    def test_goToproductDetailsByItemImage(self):
+        
+        
+        itemImage = WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.XPATH, "//*[@id='item_4_img_link']/img")))
+        itemImageName = itemImage.accessible_name
+        
+    
+        itemImageLink= WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.ID, "item_4_img_link")))
+        itemImageLink.click()
+        
+      
+        itemDetailsImage = WebDriverWait(self.driver,5).until(ec.visibility_of_element_located((By.CLASS_NAME, "inventory_details_img")))
+        assert itemDetailsImage.accessible_name == itemImageName, "Item Images does not match"
